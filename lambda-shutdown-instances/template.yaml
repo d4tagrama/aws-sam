@@ -35,7 +35,7 @@ Resources:
     Type: AWS::SNS::Subscription
     Properties:
       Protocol: email
-      Endpoint: roid85@gmail.com
+      Endpoint: example@example.com
       TopicArn: !Ref NotificationTopic
 
 
