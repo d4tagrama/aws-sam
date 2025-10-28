@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Lambda function create to shutdown multiple instnances base on its TAGs
+  Lambda function created to shut down multiple instances based on their tags.
 
 Globals:
   Function:
