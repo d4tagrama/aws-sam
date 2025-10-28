@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Lambda function create to shutdown multiple instnances base on its TAGs
+
+Globals:
+  Function:
+    Timeout: 3
+    Environment:
+      Variables:
+        DRYRUN: "True"
+
+Resources:
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: "Notification Topic"
+      TopicName: "ShutdownNotificationTopic"
+
+  NotificationTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref NotificationTopic
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: "SNS:Publish"
+            Resource: !Ref NotificationTopic
+
+  EmailSubscriptions:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: roid85@gmail.com
+      TopicArn: !Ref NotificationTopic
+
+
+  ShutdownInstancesFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: ec2_shutdown_lambda/
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      Architectures:
+        - x86_64
+      LoggingConfig:
+        LogFormat: JSON
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ec2:DescribeInstances
+                - ec2:StopInstances
+                - logs:CreateLogGroup
+              Resource: "*"
+
+
+  ShutdownLambdaRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Schedules Lambda and notifies via SNS"
+      ScheduleExpression: "cron(20 4 * * ? *)"
+      Targets:
+        - Arn: !GetAtt ShutdownInstancesFunction.Arn
+          Id: LambdaTarget
+        - Arn: !Ref NotificationTopic
+          Id: SNSNotifyTarget
+
+Outputs:
+  FunctionArn:
+    Description: "Lambda's ARN"
+    Value: !GetAtt ShutdownInstancesFunction.Arn
